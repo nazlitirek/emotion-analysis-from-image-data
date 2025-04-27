@@ -1,31 +1,36 @@
 import cv2
 from fastai.vision.all import *
 
-# Kaydedilen modeli yükle
+# Load the trained model
 learn = load_learner('model.pkl')
 
-# Kamera başlatma
+# Open the webcam (index 0 for the default camera)
 cap = cv2.VideoCapture(0)
 
-# Kamera açıldıysa
-if not cap.isOpened():
-    print("Kamera açılamadı!")
-else:
-    print("Kamera başarıyla açıldı!")
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-# Kamera görüntüsünü almak için
-ret, frame = cap.read()
+    # Convert the frame to RGB (OpenCV uses BGR by default)
+    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-# Görüntüyü işlemek
-if ret:
-    # OpenCV'nin BGR formatında olduğu için, bunu RGB formatına çevirmemiz lazım
-    img = PILImage.create(frame)  # frame OpenCV formatında alınan görüntü
+    # Convert the image to a PIL image (required by FastAI)
+    pil_img = PILImage.create(img)
 
-    # Modelin tahmin yapması
-    pred_class, pred_idx, outputs = learn.predict(img)
-    print(f'Predicted class: {pred_class}, Index: {pred_idx}')
-    print(f'Outputs (probabilities): {outputs}')
+    # Make prediction
+    pred_class, pred_idx, outputs = learn.predict(pil_img)
 
-# Kamera kapatma
+    # Display the prediction on the frame
+    cv2.putText(frame, f'Prediction: {pred_class}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+    # Show the frame with prediction
+    cv2.imshow("Emotion Detection", frame)
+
+    # Break the loop if 'q' is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the camera and close all OpenCV windows
 cap.release()
 cv2.destroyAllWindows()
